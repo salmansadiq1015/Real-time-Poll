@@ -46,10 +46,10 @@ export function PollPage() {
         const newState = channel.presenceState();
         setActiveViewers(Object.keys(newState).length);
       })
-      .on("presence", { event: "join" }, ({ key, newPresences }) => {
+      .on("presence", { event: "join" }, ({ newPresences }) => {
         setActiveViewers((prev) => prev + newPresences.length);
       })
-      .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
+      .on("presence", { event: "leave" }, ({ leftPresences }) => {
         setActiveViewers((prev) => Math.max(0, prev - leftPresences.length));
       })
       .subscribe(async (status) => {
@@ -70,9 +70,15 @@ export function PollPage() {
     if (!id) return;
 
     try {
-      const { data, error } = await supabase
+      // Try to fetch with profiles join first
+      let { data, error } = await supabase
         .from("polls")
-        .select("*")
+        .select(
+          `
+          *,
+          profiles(email)
+        `
+        )
         .eq("id", id)
         .single();
 
@@ -82,22 +88,29 @@ export function PollPage() {
           navigate("/");
           return;
         }
-        throw error;
-      }
 
-      let creator_email = undefined;
-      if (data?.created_by) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("email")
-          .eq("id", data.created_by)
+        // If profiles join fails, try without it
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from("polls")
+          .select("*")
+          .eq("id", id)
           .single();
-        creator_email = profile?.email;
+
+        if (fallbackError) {
+          if (fallbackError.code === "PGRST116") {
+            toast.error("Poll not found");
+            navigate("/");
+            return;
+          }
+          throw fallbackError;
+        }
+
+        data = fallbackData;
       }
 
       setPoll({
         ...data,
-        creator_email,
+        creator_email: data.profiles?.email || "Unknown",
       });
     } catch (error) {
       console.error("Error fetching poll:", error);
@@ -153,7 +166,12 @@ export function PollPage() {
         poll_uuid: id,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching results:", error);
+        // Fallback: calculate results manually
+        await calculateResultsManually();
+        return;
+      }
 
       setResults(data || []);
 
@@ -165,6 +183,58 @@ export function PollPage() {
       setTotalVotes(total);
     } catch (error) {
       console.error("Error fetching results:", error);
+      await calculateResultsManually();
+    }
+  };
+
+  const calculateResultsManually = async () => {
+    if (!id || !poll) return;
+
+    try {
+      const { data: votes, error } = await supabase
+        .from("votes")
+        .select("selected_options")
+        .eq("poll_id", id);
+
+      if (error) throw error;
+
+      const optionCounts: { [key: number]: number } = {};
+      let totalVoteCount = 0;
+
+      // Initialize counts
+      poll.options.forEach((_, index) => {
+        optionCounts[index] = 0;
+      });
+
+      // Count votes
+      votes?.forEach((vote) => {
+        if (vote.selected_options && Array.isArray(vote.selected_options)) {
+          vote.selected_options.forEach((optionIndex: number) => {
+            if (optionCounts[optionIndex] !== undefined) {
+              optionCounts[optionIndex]++;
+            }
+          });
+          totalVoteCount++;
+        }
+      });
+
+      // Build results
+      const manualResults: VoteResult[] = poll.options.map((option, index) => ({
+        option_index: index,
+        option_text: option,
+        vote_count: optionCounts[index] || 0,
+        percentage:
+          totalVoteCount > 0
+            ? Math.round(
+                ((optionCounts[index] || 0) / totalVoteCount) * 100 * 10
+              ) / 10
+            : 0,
+      }));
+
+      setResults(manualResults);
+      setTotalVotes(totalVoteCount);
+    } catch (error) {
+      console.error("Error calculating results manually:", error);
     }
   };
 

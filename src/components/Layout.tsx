@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Vote, User, LogOut, Plus, BarChart3 } from 'lucide-react'
+import { Vote, User, LogOut, Plus, BarChart3, Menu, X } from 'lucide-react'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -10,16 +10,47 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth()
   const location = useLocation()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   const isActive = (path: string) => location.pathname === path
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [location])
+
+  const navItems = [
+    { path: '/', label: 'Polls', icon: BarChart3 },
+    ...(user ? [
+      { path: '/create', label: 'Create Poll', icon: Plus },
+      { path: '/profile', label: 'Profile', icon: User }
+    ] : [])
+  ]
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled 
+          ? 'bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-lg' 
+          : 'bg-white/80 backdrop-blur-md border-b border-gray-200'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
+            {/* Logo */}
+            <Link 
+              to="/" 
+              className="flex items-center space-x-2 group transition-transform duration-200 hover:scale-105"
+            >
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg shadow-lg group-hover:shadow-xl transition-shadow duration-200">
                 <Vote className="h-6 w-6 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -27,64 +58,105 @@ export function Layout({ children }: LayoutProps) {
               </span>
             </Link>
 
-            <div className="flex items-center space-x-6">
-              <Link
-                to="/"
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                  isActive('/') 
-                    ? 'bg-blue-100 text-blue-600' 
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                }`}
-              >
-                <BarChart3 className="h-4 w-4" />
-                <span>Polls</span>
-              </Link>
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-6">
+              {navItems.map(({ path, label, icon: Icon }) => (
+                <Link
+                  key={path}
+                  to={path}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                    isActive(path) 
+                      ? 'bg-blue-100 text-blue-600 shadow-md' 
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="font-medium">{label}</span>
+                </Link>
+              ))}
 
               {user ? (
-                <>
-                  <Link
-                    to="/create"
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                      isActive('/create') 
-                        ? 'bg-blue-100 text-blue-600' 
-                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                    }`}
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Create Poll</span>
-                  </Link>
-                  
-                  <Link
-                    to="/profile"
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                      isActive('/profile') 
-                        ? 'bg-blue-100 text-blue-600' 
-                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                    }`}
-                  >
-                    <User className="h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                  
-                  <button
-                    onClick={signOut}
-                    className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Sign Out</span>
-                  </button>
-                </>
+                <button
+                  onClick={signOut}
+                  className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 transform hover:scale-105"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="font-medium">Sign Out</span>
+                </button>
               ) : (
                 <div className="flex items-center space-x-3">
                   <Link
                     to="/login"
-                    className="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                    className="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/signup"
-                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 font-medium transition-all transform hover:scale-105"
+                    className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-200"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className={`md:hidden transition-all duration-300 ease-in-out ${
+          isMobileMenuOpen 
+            ? 'max-h-96 opacity-100' 
+            : 'max-h-0 opacity-0 overflow-hidden'
+        }`}>
+          <div className="px-4 py-4 bg-white/95 backdrop-blur-lg border-t border-gray-200">
+            <div className="space-y-2">
+              {navItems.map(({ path, label, icon: Icon }) => (
+                <Link
+                  key={path}
+                  to={path}
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                    isActive(path) 
+                      ? 'bg-blue-100 text-blue-600' 
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="font-medium">{label}</span>
+                </Link>
+              ))}
+
+              {user ? (
+                <button
+                  onClick={signOut}
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span className="font-medium">Sign Out</span>
+                </button>
+              ) : (
+                <div className="space-y-2 pt-2 border-t border-gray-200">
+                  <Link
+                    to="/login"
+                    className="block w-full px-4 py-3 text-center text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="block w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 font-medium transition-all duration-200 text-center"
                   >
                     Sign Up
                   </Link>
@@ -95,8 +167,10 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
+      <main className="pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {children}
+        </div>
       </main>
     </div>
   )

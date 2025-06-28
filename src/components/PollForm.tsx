@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { Plus, Trash2, Calendar, Settings as SettingsIcon } from 'lucide-react';
+import { Plus, Trash2, Calendar, Settings as SettingsIcon, Sparkles } from 'lucide-react';
 import { CreatePollData, PollSettings } from '../types';
 
 interface PollFormProps {
@@ -17,6 +17,7 @@ interface FormData {
 
 export function PollForm({ onSubmit, loading = false }: PollFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   
   const {
     register,
@@ -68,180 +69,238 @@ export function PollForm({ onSubmit, loading = false }: PollFormProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Create New Poll</h2>
-        <p className="text-gray-600">
-          Create an engaging poll and get real-time responses from your audience
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
-        {/* Poll Question */}
-        <div>
-          <label htmlFor="question" className="block text-sm font-medium text-gray-700 mb-2">
-            Poll Question *
-          </label>
-          <textarea
-            {...register('question', {
-              required: 'Poll question is required',
-              minLength: {
-                value: 10,
-                message: 'Question must be at least 10 characters long',
-              },
-              maxLength: {
-                value: 300,
-                message: 'Question must be less than 300 characters',
-              },
-            })}
-            rows={3}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
-            placeholder="What would you like to ask your audience?"
-          />
-          {errors.question && (
-            <p className="mt-1 text-sm text-red-600">{errors.question.message}</p>
-          )}
-        </div>
-
-        {/* Poll Options */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Answer Options *
-          </label>
-          <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-center space-x-3">
-                <span className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                  {index + 1}
-                </span>
-                <input
-                  {...register(`options.${index}.value`, {
-                    required: 'Option cannot be empty',
-                    maxLength: {
-                      value: 100,
-                      message: 'Option must be less than 100 characters',
-                    },
-                  })}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder={`Option ${index + 1}`}
-                />
-                {fields.length > 2 && (
-                  <button
-                    type="button"
-                    onClick={() => removeOption(index)}
-                    className="flex-shrink-0 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-          
-          {fields.length < 10 && (
-            <button
-              type="button"
-              onClick={addOption}
-              className="mt-3 w-full flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add Another Option
-            </button>
-          )}
-          
-          {errors.options && (
-            <p className="mt-1 text-sm text-red-600">All options are required</p>
-          )}
-        </div>
-
-        {/* Advanced Settings Toggle */}
-        <div>
-          <button
-            type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
-          >
-            <SettingsIcon className="h-5 w-5 mr-2" />
-            {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
-          </button>
-        </div>
-
-        {/* Advanced Settings */}
-        {showAdvanced && (
-          <div className="bg-gray-50 rounded-lg p-6 space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Poll Settings</h3>
-            
-            {/* Poll Settings Checkboxes */}
-            <div className="space-y-4">
-              <label className="flex items-center">
-                <input
-                  {...register('settings.allow_multiple_selections')}
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-3 text-sm text-gray-700">
-                  Allow multiple selections per vote
-                </span>
-              </label>
-
-              <label className="flex items-center">
-                <input
-                  {...register('settings.show_results_before_voting')}
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-3 text-sm text-gray-700">
-                  Show results before voting
-                </span>
-              </label>
-
-              <label className="flex items-center">
-                <input
-                  {...register('settings.allow_vote_changes')}
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-3 text-sm text-gray-700">
-                  Allow users to change their vote
-                </span>
-              </label>
+    <div className="max-w-4xl mx-auto">
+      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 p-6 sm:p-8">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+              <Sparkles className="h-6 w-6 text-white" />
             </div>
-
-            {/* End Date */}
             <div>
-              <label htmlFor="ends_at" className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Calendar className="h-4 w-4 mr-2" />
-                Poll End Date (Optional)
-              </label>
-              <input
-                {...register('ends_at')}
-                type="datetime-local"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                min={new Date().toISOString().slice(0, 16)}
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Leave empty for polls that never expire
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">Create New Poll</h2>
+              <p className="text-blue-100 text-sm sm:text-base">
+                Create an engaging poll and get real-time responses
               </p>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
-        >
-          {loading ? (
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              Creating Poll...
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 sm:p-8 space-y-8">
+          {/* Poll Question */}
+          <div className="space-y-3">
+            <label htmlFor="question" className="block text-sm font-semibold text-gray-700">
+              Poll Question *
+            </label>
+            <div className="relative">
+              <textarea
+                {...register('question', {
+                  required: 'Poll question is required',
+                  minLength: {
+                    value: 10,
+                    message: 'Question must be at least 10 characters long',
+                  },
+                  maxLength: {
+                    value: 300,
+                    message: 'Question must be less than 300 characters',
+                  },
+                })}
+                rows={3}
+                onFocus={() => setFocusedField('question')}
+                onBlur={() => setFocusedField(null)}
+                className={`w-full px-4 py-4 border-2 rounded-2xl transition-all duration-300 resize-none text-lg ${
+                  focusedField === 'question'
+                    ? 'border-blue-500 ring-4 ring-blue-100 shadow-lg'
+                    : errors.question
+                    ? 'border-red-300 ring-4 ring-red-100'
+                    : 'border-gray-200 hover:border-gray-300'
+                } focus:outline-none`}
+                placeholder="What would you like to ask your audience?"
+              />
+              <div className={`absolute bottom-3 right-3 text-xs transition-colors duration-200 ${
+                focusedField === 'question' ? 'text-blue-500' : 'text-gray-400'
+              }`}>
+                {watch('question')?.length || 0}/300
+              </div>
             </div>
-          ) : (
-            'Create Poll'
-          )}
-        </button>
-      </form>
+            {errors.question && (
+              <p className="text-sm text-red-600 flex items-center animate-fadeIn">
+                <span className="w-4 h-4 bg-red-100 rounded-full flex items-center justify-center mr-2">!</span>
+                {errors.question.message}
+              </p>
+            )}
+          </div>
+
+          {/* Poll Options */}
+          <div className="space-y-4">
+            <label className="block text-sm font-semibold text-gray-700">
+              Answer Options *
+            </label>
+            <div className="space-y-3">
+              {fields.map((field, index) => (
+                <div 
+                  key={field.id} 
+                  className="flex items-center space-x-3 group animate-slideIn"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl flex items-center justify-center text-sm font-bold shadow-lg group-hover:shadow-xl transition-shadow duration-200">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 relative">
+                    <input
+                      {...register(`options.${index}.value`, {
+                        required: 'Option cannot be empty',
+                        maxLength: {
+                          value: 100,
+                          message: 'Option must be less than 100 characters',
+                        },
+                      })}
+                      onFocus={() => setFocusedField(`option-${index}`)}
+                      onBlur={() => setFocusedField(null)}
+                      className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-300 ${
+                        focusedField === `option-${index}`
+                          ? 'border-blue-500 ring-4 ring-blue-100 shadow-lg'
+                          : 'border-gray-200 hover:border-gray-300'
+                      } focus:outline-none`}
+                      placeholder={`Option ${index + 1}`}
+                    />
+                    <div className={`absolute bottom-2 right-3 text-xs transition-colors duration-200 ${
+                      focusedField === `option-${index}` ? 'text-blue-500' : 'text-gray-400'
+                    }`}>
+                      {watchedOptions[index]?.value?.length || 0}/100
+                    </div>
+                  </div>
+                  {fields.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => removeOption(index)}
+                      className="flex-shrink-0 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 transform hover:scale-110"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            {fields.length < 10 && (
+              <button
+                type="button"
+                onClick={addOption}
+                className="w-full flex items-center justify-center px-6 py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-300 transform hover:scale-105"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add Another Option
+              </button>
+            )}
+            
+            {errors.options && (
+              <p className="text-sm text-red-600 animate-fadeIn">All options are required</p>
+            )}
+          </div>
+
+          {/* Advanced Settings Toggle */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-all duration-200 transform hover:scale-105"
+            >
+              <SettingsIcon className={`h-5 w-5 mr-2 transition-transform duration-300 ${showAdvanced ? 'rotate-180' : ''}`} />
+              {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
+            </button>
+          </div>
+
+          {/* Advanced Settings */}
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${
+            showAdvanced 
+              ? 'max-h-96 opacity-100' 
+              : 'max-h-0 opacity-0'
+          }`}>
+            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-6 space-y-6 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mr-3">
+                  <SettingsIcon className="h-4 w-4 text-white" />
+                </div>
+                Poll Settings
+              </h3>
+              
+              {/* Settings Checkboxes */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  {
+                    name: 'settings.allow_multiple_selections',
+                    label: 'Multiple Selections',
+                    description: 'Allow voters to select multiple options'
+                  },
+                  {
+                    name: 'settings.show_results_before_voting',
+                    label: 'Show Results Early',
+                    description: 'Display results before voting'
+                  },
+                  {
+                    name: 'settings.allow_vote_changes',
+                    label: 'Allow Changes',
+                    description: 'Let users change their vote'
+                  }
+                ].map((setting) => (
+                  <label key={setting.name} className="flex items-start space-x-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-colors duration-200 cursor-pointer group">
+                    <input
+                      {...register(setting.name as any)}
+                      type="checkbox"
+                      className="mt-1 h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors duration-200"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+                        {setting.label}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {setting.description}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              {/* End Date */}
+              <div>
+                <label htmlFor="ends_at" className="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Poll End Date (Optional)
+                </label>
+                <input
+                  {...register('ends_at')}
+                  type="datetime-local"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 focus:outline-none"
+                  min={new Date().toISOString().slice(0, 16)}
+                />
+                <p className="mt-2 text-sm text-gray-500">
+                  Leave empty for polls that never expire
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white py-4 px-8 rounded-2xl font-semibold hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl text-lg"
+          >
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                Creating Your Amazing Poll...
+              </div>
+            ) : (
+              <div className="flex items-center justify-center">
+                <Sparkles className="h-5 w-5 mr-2" />
+                Create Poll
+              </div>
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

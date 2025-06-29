@@ -15,6 +15,17 @@
   --toast-border: #4b5563;
 }
 
+/* Ensure light mode has proper background */
+.light {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+.dark {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
 /* Custom animations */
 @keyframes fadeIn {
   from {
@@ -113,7 +124,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar for light mode */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -135,9 +146,13 @@ html {
   background: linear-gradient(to bottom, #2563eb, #7c3aed);
 }
 
-/* Focus styles */
+/* Focus styles for light mode */
 .focus-ring {
-  @apply focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500;
+  @apply focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500;
+}
+
+.dark .focus-ring {
+  @apply focus:ring-blue-900/30;
 }
 
 /* Gradient text */
@@ -148,7 +163,7 @@ html {
   background-clip: text;
 }
 
-/* Glass effect */
+/* Glass effect for light mode */
 .glass {
   background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(10px);
@@ -177,7 +192,7 @@ html {
   }
 }
 
-/* Loading skeleton */
+/* Loading skeleton for light mode */
 .skeleton {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
@@ -198,16 +213,20 @@ html {
   }
 }
 
-/* Button hover effects */
+/* Button hover effects for light mode */
 .btn-primary {
   @apply bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300;
 }
 
 .btn-secondary {
-  @apply bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-300 dark:border-gray-600 font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30;
+  @apply bg-white text-gray-700 border-2 border-gray-300 font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:border-blue-500 hover:text-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100;
 }
 
-/* Card hover effects */
+.dark .btn-secondary {
+  @apply bg-gray-700 text-gray-300 border-gray-600 hover:text-blue-400 focus:ring-blue-900/30;
+}
+
+/* Card hover effects for light mode */
 .card-hover {
   @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-2 hover:scale-105;
 }
@@ -268,12 +287,12 @@ html {
   }
 }
 
-/* Dark mode transitions */
+/* Ensure proper transitions for theme switching */
 * {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-/* Enhanced animations for dark mode */
+/* Enhanced animations for light mode */
 @media (prefers-reduced-motion: no-preference) {
   .animate-fadeIn {
     animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
@@ -288,16 +307,17 @@ html {
   }
 }
 
-/* Custom focus styles for dark mode */
-.dark .focus-ring {
-  @apply focus:ring-blue-900/30;
+/* Ensure body background changes with theme */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Enhanced button styles for dark mode */
-.dark .btn-primary {
-  @apply focus:ring-blue-900/50;
+.light body {
+  background-color: #ffffff;
+  color: #111827;
 }
 
-.dark .btn-secondary {
-  @apply focus:ring-blue-900/30;
+.dark body {
+  background-color: #111827;
+  color: #f9fafb;
 }

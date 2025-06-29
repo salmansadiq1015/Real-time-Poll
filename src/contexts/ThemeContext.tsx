@@ -33,11 +33,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   useEffect(() => {
     const root = window.document.documentElement;
+    
+    // Remove both classes first to ensure clean state
+    root.classList.remove('dark', 'light');
+    
     if (isDark) {
       root.classList.add('dark');
     } else {
-      root.classList.remove('dark');
+      root.classList.add('light');
     }
+    
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 

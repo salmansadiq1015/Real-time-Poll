@@ -38,7 +38,7 @@ export function Layout({ children }: LayoutProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+    <>
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled 
           ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700 shadow-lg' 
@@ -178,6 +178,6 @@ export function Layout({ children }: LayoutProps) {
           {children}
         </div>
       </main>
-    </div>
+    </>
   )
 }

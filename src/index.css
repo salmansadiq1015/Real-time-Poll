@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS Variables for theme support */
+:root {
+  --toast-bg: #ffffff;
+  --toast-color: #333333;
+  --toast-border: #e5e7eb;
+}
+
+.dark {
+  --toast-bg: #374151;
+  --toast-color: #f9fafb;
+  --toast-border: #4b5563;
+}
+
 /* Custom animations */
 @keyframes fadeIn {
   from {
@@ -107,7 +120,10 @@ html {
 
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
-  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #374151;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -121,7 +137,7 @@ html {
 
 /* Focus styles */
 .focus-ring {
-  @apply focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500;
+  @apply focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500;
 }
 
 /* Gradient text */
@@ -137,6 +153,11 @@ html {
   background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Hover scale utilities */
@@ -163,6 +184,11 @@ html {
   animation: loading 1.5s infinite;
 }
 
+.dark .skeleton {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
+}
+
 @keyframes loading {
   0% {
     background-position: 200% 0;
@@ -178,7 +204,7 @@ html {
 }
 
 .btn-secondary {
-  @apply bg-white text-gray-700 border-2 border-gray-300 font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:border-blue-500 hover:text-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100;
+  @apply bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-300 dark:border-gray-600 font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30;
 }
 
 /* Card hover effects */
@@ -240,4 +266,38 @@ html {
   .margin-responsive {
     margin: 1.5rem;
   }
+}
+
+/* Dark mode transitions */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Enhanced animations for dark mode */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fadeIn {
+    animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  
+  .animate-slideIn {
+    animation: slideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  
+  .animate-scaleIn {
+    animation: scaleIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}
+
+/* Custom focus styles for dark mode */
+.dark .focus-ring {
+  @apply focus:ring-blue-900/30;
+}
+
+/* Enhanced button styles for dark mode */
+.dark .btn-primary {
+  @apply focus:ring-blue-900/50;
+}
+
+.dark .btn-secondary {
+  @apply focus:ring-blue-900/30;
 }

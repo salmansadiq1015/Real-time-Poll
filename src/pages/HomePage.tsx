@@ -21,14 +21,16 @@ export function HomePage() {
 
   useEffect(() => {
     // Real-time subscription for new polls
-    const channel = supabase
-      .channel('polls-channel')
+    const pollsChannel = supabase
+      .channel('polls-realtime')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'polls' },
         (payload) => {
+          console.log('New poll created:', payload);
           const newPoll = payload.new as Poll;
-          setPolls(prev => [newPoll, ...prev]);
+          // Add the new poll to the beginning of the list
+          setPolls(prev => [{ ...newPoll, vote_count: 0, creator_email: 'Unknown' }, ...prev]);
           setStats(prev => ({ 
             ...prev, 
             totalPolls: prev.totalPolls + 1,
@@ -36,10 +38,83 @@ export function HomePage() {
           }));
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'polls' },
+        (payload) => {
+          console.log('Poll updated:', payload);
+          const updatedPoll = payload.new as Poll;
+          setPolls(prev => prev.map(poll => 
+            poll.id === updatedPoll.id 
+              ? { ...updatedPoll, vote_count: poll.vote_count, creator_email: poll.creator_email }
+              : poll
+          ));
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'polls' },
+        (payload) => {
+          console.log('Poll deleted:', payload);
+          const deletedPoll = payload.old as Poll;
+          setPolls(prev => prev.filter(poll => poll.id !== deletedPoll.id));
+          setStats(prev => ({ 
+            ...prev, 
+            totalPolls: Math.max(0, prev.totalPolls - 1),
+            activePolls: Math.max(0, prev.activePolls - 1)
+          }));
+        }
+      )
+      .subscribe((status) => {
+        console.log('Polls subscription status:', status);
+      });
+
+    // Real-time subscription for vote updates
+    const votesChannel = supabase
+      .channel('votes-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'votes' },
+        (payload) => {
+          console.log('New vote:', payload);
+          const newVote = payload.new as any;
+          // Update the vote count for the specific poll
+          setPolls(prev => prev.map(poll => 
+            poll.id === newVote.poll_id 
+              ? { ...poll, vote_count: (poll.vote_count || 0) + 1 }
+              : poll
+          ));
+          setStats(prev => ({ 
+            ...prev, 
+            totalVotes: prev.totalVotes + 1
+          }));
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'votes' },
+        (payload) => {
+          console.log('Vote deleted:', payload);
+          const deletedVote = payload.old as any;
+          // Update the vote count for the specific poll
+          setPolls(prev => prev.map(poll => 
+            poll.id === deletedVote.poll_id 
+              ? { ...poll, vote_count: Math.max(0, (poll.vote_count || 0) - 1) }
+              : poll
+          ));
+          setStats(prev => ({ 
+            ...prev, 
+            totalVotes: Math.max(0, prev.totalVotes - 1)
+          }));
+        }
+      )
+      .subscribe((status) => {
+        console.log('Votes subscription status:', status);
+      });
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(pollsChannel);
+      supabase.removeChannel(votesChannel);
     };
   }, []);
 
